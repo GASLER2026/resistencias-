@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resistencias</title>
+<style>
+:root{--bg:#424242;--panel:#303030;--gold:#bf930d;--text:#fff;--muted:#d4d4d4;--circuit:#898989}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Times New Roman",Times,serif;font-size:17px}
+header{display:flex;align-items:center;gap:18px;padding:18px 24px;border-bottom:2px solid #777;background:#383838}
+.logo-wrap{width:82px;height:82px;flex:0 0 82px;border:2px dashed #aaa;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#222;cursor:pointer}
+.logo-wrap img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none}
+.logo-placeholder{text-align:center;font-size:13px;padding:5px;color:#ddd}
+header h1{margin:0;font-size:clamp(24px,3vw,36px)} header p{margin:5px 0 0;color:#ddd}
+main{padding:18px;max-width:1800px;margin:auto}
+.top-grid{display:grid;grid-template-columns:220px minmax(400px,1fr) minmax(260px,330px);gap:18px;align-items:start}
+.panel{background:#353535;border:1px solid #666;border-radius:10px;padding:14px;min-width:0}
+h2,h3{margin:0 0 12px}h2{font-size:23px}h3{font-size:19px}
+label{display:block;margin:10px 0 5px}
+input,select,button{font:inherit}
+input[type=number],input[type=text],select{width:100%;padding:9px;border:1px solid #888;border-radius:5px;background:#202020;color:#fff}
+button,.interactive,.value-card,.color-row{transition:transform .18s,background-color .18s,color .18s}
+button{border:1px solid #777;border-radius:6px;background:#111;color:white;padding:8px 12px;cursor:pointer}
+button:hover,.interactive:hover,.value-card:hover,.color-row:hover{background:var(--gold)!important;color:#fff;transform:scale(1.04)}
+input:focus,select:focus{outline:2px solid var(--gold)}
+.field-box{padding:10px;background:#111;border-radius:6px;margin:8px 0 14px}
+.confirm-main{width:100%;font-weight:bold;margin:0 0 12px;background:#111;color:#fff}
+.circuit-part.rotated .terminal.left{left:61px;top:-1px}
+.circuit-part.rotated .terminal.right{left:61px;right:auto;top:auto;bottom:-1px}
+.circuit-part.rotated .resistor{transform:rotate(90deg)}
+.field-box input{margin-top:6px}
+.readout{background:#222;border-radius:7px;padding:10px;margin-top:10px;line-height:1.45}
+.resistor-list{display:grid;gap:12px}
+.resistor-card{display:grid;grid-template-columns:minmax(180px,1fr) minmax(140px,.8fr);gap:12px;align-items:center;padding:10px;background:#242424;border-radius:8px}
+.resistor-card h3{margin-bottom:6px}
+.resistor{height:58px;min-width:160px;position:relative;display:flex;align-items:center;justify-content:center;cursor:grab}
+.resistor:before,.resistor:after{content:"";position:absolute;top:26px;height:6px;width:24%;background:linear-gradient(#ddd,#777,#ddd);z-index:0}
+.resistor:before{left:0}.resistor:after{right:0}
+.resistor-body{height:42px;width:58%;min-width:105px;position:relative;z-index:1;border:1px solid #d8c99a;border-radius:15px;background:linear-gradient(90deg,#bca66c,#f2e3ae 15%,#dfcc8e 80%,#a58c51);display:flex;align-items:stretch;justify-content:space-evenly;padding:0 12px;box-shadow:0 2px 4px #111}
+.band{width:9px;min-width:7px;height:100%;display:block;border-left:1px solid #ffffff55;border-right:1px solid #0005}
+.band.gold,.swatch.gold{background:#c9a13b}.band.silver,.swatch.silver{background:#c5c7c9}.band.black,.swatch.black{background:#090909}.band.brown,.swatch.brown{background:#7b3f16}.band.red,.swatch.red{background:#e5232e}.band.orange,.swatch.orange{background:#ef781b}.band.yellow,.swatch.yellow{background:#f5df28}.band.green,.swatch.green{background:#278a45}.band.blue,.swatch.blue{background:#2364c8}.band.violet,.swatch.violet{background:#8146a5}.band.gray,.swatch.gray{background:#888}
+.resistor-meta{font-size:16px;line-height:1.5}.resistor-meta strong{color:#f2cf56}
+table{width:100%;border-collapse:collapse;background:#111;color:#fff}
+th,td{padding:7px 5px;text-align:left;border:0}
+th{background:#181818;color:#f2cf56}
+.color-row{cursor:pointer}
+.swatch{display:inline-block;width:17px;height:17px;border-radius:3px;vertical-align:middle;margin-right:6px;border:1px solid #aaa}
+.small-note{font-size:14px;color:#ccc}
+.lower-grid{display:grid;grid-template-columns:minmax(420px,1.2fr) minmax(300px,.9fr) minmax(230px,.7fr);gap:18px;margin-top:18px}
+.circuit-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.circuit-canvas{height:400px;position:relative;background:var(--circuit);border:2px solid #eee;border-radius:6px;overflow:hidden}
+.circuit-canvas:after{content:"Arrastra aquí una resistencia o usa «Añadir»";position:absolute;top:10px;left:10px;color:#eee;font-size:14px;pointer-events:none}
+.circuit-part{position:absolute;width:140px;height:65px;display:flex;align-items:center;justify-content:center;z-index:2;cursor:move;touch-action:none}
+.circuit-part .resistor{width:140px;transform-origin:center}
+.circuit-part.rotated .resistor{transform:rotate(90deg)}
+.terminal{position:absolute;width:18px;height:18px;border:2px solid #fff;background:#111;border-radius:50%;z-index:4;cursor:pointer;box-shadow:0 0 0 2px #333}
+.terminal.left{left:-1px;top:24px}.terminal.right{right:-1px;top:24px}
+.terminal.selected{background:var(--gold);box-shadow:0 0 0 3px #fff}
+.wire-layer{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.circuit-part .resistor-body{border:2px solid white}
+.calc-box{margin-top:10px;background:#111;padding:12px;border-radius:6px}
+.calc-box strong{color:#f2cf56}
+.commercial-wrap{overflow:auto}
+.commercial-table{table-layout:fixed}
+.commercial-table td{padding:0}
+.commercial-table input{border:0;border-radius:0;padding:6px 2px;text-align:center;background:#111}
+.commercial-table input:focus{background:#292929}
+.formula{background:#111;padding:12px;border-radius:8px;margin:10px 0;line-height:1.5}
+.formula code{font-family:"Times New Roman",serif;color:#f2cf56;white-space:normal}
+.fraction{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 3px}
+.fraction .numerator{padding:0 5px 3px;border-bottom:1px solid currentColor}
+.fraction .denominator{padding:3px 5px 0}
+.parallel-equation{display:flex;align-items:center;flex-wrap:wrap;gap:3px;font-size:18px}
+.parallel-equation .sum{display:inline-flex;align-items:center;flex-wrap:wrap;gap:1px}
+@media(max-width:1050px){.top-grid{grid-template-columns:200px 1fr}.colors-panel{grid-column:1/-1}.lower-grid{grid-template-columns:1fr 1fr}.formula-panel{grid-column:1/-1}}
+@media(max-width:700px){header{padding:12px}.top-grid,.lower-grid{grid-template-columns:1fr}.resistor-card{grid-template-columns:1fr}.circuit-canvas{height:360px}.panel{padding:11px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-wrap" title="Logo del creador">
+    <img id="logoPreview" alt="Logo del creador" src="https://i.pinimg.com/originals/5c/0c/57/5c0c575e3f7f3bad4ad6449c22078fd9.jpg" style="display:block;">
+  </div>
+  <div><h1>Resistencias</h1><p>Código de colores · Valores comerciales · Circuitos resistivos</p></div>
+</header>
+<main>
+  <section class="top-grid">
+    <aside class="panel">
+      <h2>Resistencia</h2>
+      <div class="field-box interactive">
+        <label for="mainResistance">Valor (Ω)</label>
+        <input id="mainResistance" type="number" min="0" step="any" placeholder="Ej. 4700">
+      </div>
+      <div class="field-box interactive">
+        <label for="mainTolerance">Tolerancia (%)</label>
+        <input id="mainTolerance" type="number" min="0" step="any" placeholder="Ej. 5">
+      </div>
+      <button id="confirmMain" class="confirm-main" type="button" title="Buscar los tres valores comerciales más cercanos">✓ Confirmar valores</button>
+      <div class="readout"><div>Valor: <strong id="mainValueOut">—</strong></div><div>Tolerancia: <strong id="mainTolOut">—</strong></div></div>
+      <p class="small-note">Ingresa un valor y una tolerancia para ver su representación por bandas.</p>
+    </aside>
+    <section class="panel">
+      <h2>3 valores comerciales cercanos</h2>
+      <p class="small-note">Cada resistencia muestra dos cifras, multiplicador y tolerancia. Cambia los valores para actualizar las bandas.</p>
+      <div class="resistor-list" id="resistorList"></div>
+    </section>
+    <aside class="panel colors-panel">
+      <h2>Código de colores</h2>
+      <table id="colorTable">
+        <thead><tr><th>Color</th><th>Valor</th><th>Tolerancia</th><th>Multiplicador</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="small-note">Haz clic en un color para usarlo como referencia. Negro: ×1; dorado: ×0.1; plateado: ×0.01.</p>
+    </aside>
+  </section>
+  <section class="lower-grid">
+    <section class="panel">
+      <h2>Circuito resistivo</h2>
+      <div class="circuit-toolbar">
+        <button id="addResistor">＋ Añadir resistencia</button>
+        <button id="rotateSelected" title="También puedes seleccionar una resistencia y pulsar R">↻ Rotar</button>
+        <button id="deleteSelected">Eliminar seleccionada</button>
+        <button id="clearCircuit">Limpiar</button>
+      </div>
+      <div class="field-box" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+        <div><label for="circuitValue">Valor (Ω)</label><input id="circuitValue" type="number" min="0" step="any" placeholder="Ej. 220"></div>
+        <div><label for="circuitTolerance">Tolerancia (%)</label><input id="circuitTolerance" type="number" min="0" step="any" placeholder="Ej. 5"></div>
+        <button id="confirmCircuit">✓</button>
+      </div>
+      <p class="small-note">Arrastra las resistencias para moverlas. Pulsa un terminal y luego otro para conectarlos. Selecciona una resistencia y pulsa R o «Rotar».</p>
+      <div id="circuitCanvas" class="circuit-canvas" aria-label="Área de circuito">
+        <svg class="wire-layer" id="wireLayer"></svg>
+      </div>
+      <div class="calc-box">
+        <label for="calcMode">Método de cálculo</label>
+        <select id="calcMode"><option value="series">Serie (sumar resistencias)</option><option value="parallel">Paralelo (inverso de la suma de inversos)</option></select>
+        <div style="margin-top:8px">Resistencia total: <strong id="totalResistance">—</strong></div>
+        <div class="small-note" id="calcExplanation">Añade al menos una resistencia.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Valores comerciales</h2>
+      <p class="small-note">Tabla de valores comerciales típicos. Puedes editar las celdas si lo necesitas.</p>
+      <div class="commercial-wrap"><table class="commercial-table" id="commercialTable"></table></div>
+    </section>
+    <aside class="panel formula-panel">
+      <h2>Fórmulas</h2>
+      <div class="formula"><strong>Resistencia serie</strong><br><code>Rₜ = R₁ + R₂ + … + Rₙ</code></div>
+      <div class="formula"><strong>Resistencia paralelo</strong><br><code class="parallel-equation">Rₜ = <span class="fraction"><span class="numerator">1</span><span class="denominator sum"><span class="fraction"><span class="numerator">1</span><span class="denominator">R₁</span></span> + <span class="fraction"><span class="numerator">1</span><span class="denominator">R₂</span></span> + … + <span class="fraction"><span class="numerator">1</span><span class="denominator">Rₙ</span></span></span></span></code></div>
+      <p class="small-note">El cálculo de abajo usa el método elegido sobre todas las resistencias colocadas en el área del circuito.</p>
+    </aside>
+  </section>
+</main>
+<script>
+const colors=[
+ {name:'Negro',key:'black',digit:0,mult:1,tol:'—'},
+ {name:'Café',key:'brown',digit:1,mult:10,tol:'±1%'},
+ {name:'Rojo',key:'red',digit:2,mult:100,tol:'±2%'},
+ {name:'Naranja',key:'orange',digit:3,mult:1000,tol:'—'},
+ {name:'Amarillo',key:'yellow',digit:4,mult:10000,tol:'—'},
+ {name:'Verde',key:'green',digit:5,mult:100000,tol:'±0.5%'},
+ {name:'Azul',key:'blue',digit:6,mult:1000000,tol:'±0.25%'},
+ {name:'Violeta',key:'violet',digit:7,mult:10000000,tol:'±0.1%'},
+ {name:'Gris',key:'gray',digit:8,mult:100000000,tol:'±0.05%'},
+ {name:'Blanco',key:'white',digit:9,mult:1000000000,tol:'—'},
+ {name:'Dorado',key:'gold',digit:null,mult:.1,tol:'±5%'},
+ {name:'Plateado',key:'silver',digit:null,mult:.01,tol:'±10%'}
+];
+const toleranceColors=[{value:1,key:'brown'},{value:2,key:'red'},{value:.5,key:'green'},{value:.25,key:'blue'},{value:.1,key:'violet'},{value:.05,key:'gray'},{value:5,key:'gold'},{value:10,key:'silver'}];
+function fmtOhms(v){if(!Number.isFinite(v))return '—';let a=Math.abs(v);if(a>=1e6)return (v/1e6).toLocaleString('es-MX',{maximumFractionDigits:4})+' MΩ';if(a>=1e3)return (v/1e3).toLocaleString('es-MX',{maximumFractionDigits:4})+' kΩ';return v.toLocaleString('es-MX',{maximumFractionDigits:4})+' Ω'}
+function fmtNum(v){return Number(v).toLocaleString('es-MX',{maximumFractionDigits:4})}
+function encodeResistance(value,tol=5){
+ value=Math.max(0,Number(value)||0);
+ let best=null;
+ for(let exp=-2;exp<=9;exp++){let mult=Math.pow(10,exp),n=Math.round(value/mult);if(n>=10&&n<=99){best={d1:Math.floor(n/10),d2:n%10,mult,key:multKey(mult),actual:n*mult};break}}
+ if(!best){if(value===0)best={d1:0,d2:0,mult:1,key:'black',actual:0};else{let exp=Math.floor(Math.log10(value))-1;let mult=Math.pow(10,exp);let n=Math.round(value/mult);if(n>=100){n=Math.round(n/10);mult*=10}best={d1:Math.floor(n/10)%10,d2:n%10,mult,key:multKey(mult),actual:n*mult}}}
+ const tc=toleranceColors.find(x=>x.value===Number(tol))||{key:'gold'};
+ return {...best,tolKey:tc.key,tol:Number(tol)||5};
+}
+function multKey(m){if(m===.01)return 'silver';if(m===.1)return 'gold';const c=colors.find(x=>x.mult===m&&x.digit!==null);return c?c.key:(m<1?'gold':'green')}
+function bandHTML(key){return `<span class="band ${key==='white'?'':key} ${key==='white'?'white-band':''}" style="${key==='white'?'background:#f5f5f5;border:1px solid #aaa':''}"></span>`}
+function resistorHTML(value,tol=5){const e=encodeResistance(value,tol);return `<div class="resistor" title="${fmtOhms(value)} ±${tol}%"><div class="resistor-body">${bandHTML(colors[e.d1]?.key||'black')}${bandHTML(colors[e.d2]?.key||'black')}${bandHTML(e.key)}${bandHTML(e.tolKey)}</div></div>`}
+function populateColors(){
+ const body=document.querySelector('#colorTable tbody');
+ body.innerHTML=colors.filter(c=>c.digit!==null).map(c=>`<tr class="color-row" tabindex="0" title="Seleccionar ${c.name}"><td><span class="swatch ${c.key}" style="${c.key==='white'?'background:#f5f5f5':''}"></span>${c.name}</td><td>${c.digit}</td><td>${c.tol}</td><td>×${c.mult.toLocaleString('es-MX')}</td></tr>`).join('')+
+ `<tr class="color-row"><td><span class="swatch gold"></span>Dorado</td><td>—</td><td>±5%</td><td>×0.1</td></tr><tr class="color-row"><td><span class="swatch silver"></span>Plateado</td><td>—</td><td>±10%</td><td>×0.01</td></tr>`;
+}
+function renderCommercialResistors(){
+ const list=document.getElementById('resistorList');list.innerHTML='';
+ const initial=[220,470,1000];
+ initial.forEach((v,i)=>{const card=document.createElement('article');card.className='resistor-card interactive';
+ card.innerHTML=`<div><h3>Resistencia ${i+1}</h3><div class="r-art">${resistorHTML(v,5)}</div><label>Valor (Ω)</label><input class="commercial-value" type="number" min="0" step="any" value="${v}"><label>Tolerancia (%)</label><select class="commercial-tol"><option value="1">1%</option><option value="2">2%</option><option value="5" selected>5%</option><option value="10">10%</option><option value="0.5">0.5%</option><option value="0.25">0.25%</option><option value="0.1">0.1%</option></select></div><div class="resistor-meta">Valor: <strong class="r-value">${fmtOhms(v)}</strong><br>Tolerancia: <strong class="r-tol">±5%</strong><br><span class="small-note r-bands">Bandas: —</span><br><button class="add-this">Añadir al circuito</button></div>`;
+ list.appendChild(card);
+ const update=()=>{const val=Number(card.querySelector('.commercial-value').value)||0,tol=Number(card.querySelector('.commercial-tol').value);card.querySelector('.r-art').innerHTML=resistorHTML(val,tol);card.querySelector('.r-value').textContent=fmtOhms(val);card.querySelector('.r-tol').textContent='±'+tol+'%';const e=encodeResistance(val,tol);card.querySelector('.r-bands').textContent=`Bandas: ${e.d1}, ${e.d2}, ×${e.mult}, ±${tol}%`;};
+ card.querySelector('.commercial-value').addEventListener('input',update);card.querySelector('.commercial-tol').addEventListener('change',update);
+ card.querySelector('.add-this').addEventListener('click',()=>addPart(Number(card.querySelector('.commercial-value').value)||0,Number(card.querySelector('.commercial-tol').value)));
+ update();
+ });
+}
+const mainR=document.getElementById('mainResistance'),mainT=document.getElementById('mainTolerance');
+function updateMain(){const v=Number(mainR.value),t=Number(mainT.value);document.getElementById('mainValueOut').textContent=mainR.value!==''?fmtOhms(v):'—';document.getElementById('mainTolOut').textContent=mainT.value!==''?t+'%':'—'}
+mainR.addEventListener('input',updateMain);mainT.addEventListener('input',updateMain);
+
+const canvas=document.getElementById('circuitCanvas'),wireLayer=document.getElementById('wireLayer');
+let parts=[],selectedId=null,nextId=1,terminalStart=null,connections=[];
+function addPart(value,tol=5,x,y){const rect=canvas.getBoundingClientRect();const id=nextId++;const part={id,value:Number(value)||0,tol:Number(tol)||5,x:x??Math.max(10,Math.min(100+parts.length*28,rect.width-160)),y:y??Math.max(45,Math.min(70+parts.length*30,rect.height-90)),rotated:false};parts.push(part);renderParts();selectPart(id);return part}
+function renderParts(){
+ canvas.querySelectorAll('.circuit-part').forEach(n=>n.remove());
+ parts.forEach(p=>{const el=document.createElement('div');el.className='circuit-part'+(p.rotated?' rotated':'');el.dataset.id=p.id;el.style.left=p.x+'px';el.style.top=p.y+'px';el.innerHTML=`${resistorHTML(p.value,p.tol)}<button class="terminal left" data-terminal="left" aria-label="Terminal izquierdo"></button><button class="terminal right" data-terminal="right" aria-label="Terminal derecho"></button>`;
+ el.addEventListener('pointerdown',e=>{if(e.target.classList.contains('terminal'))return;selectPart(p.id);const startX=e.clientX,startY=e.clientY,ox=p.x,oy=p.y;el.setPointerCapture(e.pointerId);function move(ev){const r=canvas.getBoundingClientRect();p.x=Math.max(0,Math.min(r.width-el.offsetWidth,ox+ev.clientX-startX));p.y=Math.max(0,Math.min(r.height-el.offsetHeight,oy+ev.clientY-startY));el.style.left=p.x+'px';el.style.top=p.y+'px';drawWires()}function up(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up)}el.addEventListener('pointermove',move);el.addEventListener('pointerup',up)});
+ el.querySelectorAll('.terminal').forEach(t=>t.addEventListener('click',e=>{e.stopPropagation();terminalClick(p.id,t.dataset.terminal,t)}));
+ el.addEventListener('click',()=>selectPart(p.id));canvas.appendChild(el);
+ });
+ drawWires();updateCalculation();
+}
+function selectPart(id){selectedId=id;canvas.querySelectorAll('.circuit-part').forEach(el=>{el.style.outline=Number(el.dataset.id)===id?'2px solid #bf930d':'none'})}
+function terminalPoint(id,side){
+ const p=parts.find(p=>p.id===id);if(!p)return{x:0,y:0};
+ const el=canvas.querySelector(`.circuit-part[data-id="${id}"]`);if(!el)return{x:0,y:0};
+ const c=canvas.getBoundingClientRect();
+ // Terminales siguen la orientación de la resistencia: izquierda/derecha normal, arriba/abajo al rotar.
+ if(p.rotated)return{x:p.x+70,y:p.y+(side==='left'?0:65)};
+ return{x:p.x+(side==='left'?0:140),y:p.y+32.5};
+}
+function terminalClick(id,side,el){if(!terminalStart){terminalStart={id,side};el.classList.add('selected');return}if(terminalStart.id!==id||terminalStart.side!==side){connections.push({a:{...terminalStart},b:{id,side}})}terminalStart=null;canvas.querySelectorAll('.terminal').forEach(t=>t.classList.remove('selected'));drawWires();updateCalculation()}
+function drawWires(){wireLayer.innerHTML='';wireLayer.setAttribute('viewBox',`0 0 ${canvas.clientWidth} ${canvas.clientHeight}`);connections.forEach(c=>{const a=terminalPoint(c.a.id,c.a.side),b=terminalPoint(c.b.id,c.b.side);const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);line.setAttribute('stroke','#fff');line.setAttribute('stroke-width','3');wireLayer.appendChild(line)})}
+function updateCalculation(){
+ const vals=parts.map(p=>p.value).filter(v=>v>0);
+ if(!vals.length){document.getElementById('totalResistance').textContent='—';document.getElementById('calcExplanation').textContent='Añade al menos una resistencia.';return}
+ const mode=document.getElementById('calcMode').value;
+ let total;
+ if(mode==='series'){
+   total=vals.reduce((a,b)=>a+b,0);
+   document.getElementById('calcExplanation').textContent=`Serie: ${vals.map(fmtOhms).join(' + ')} = ${fmtOhms(total)}.`;
+ }else{
+   const reciprocals=vals.map(v=>1/v);
+   total=1/reciprocals.reduce((a,b)=>a+b,0);
+   document.getElementById('calcExplanation').textContent=`Paralelo: 1 / (${vals.map(v=>'1/'+fmtOhms(v)).join(' + ')}) = ${fmtOhms(total)}.`;
+ }
+ document.getElementById('totalResistance').textContent=fmtOhms(total);
+}
+document.getElementById('addResistor').addEventListener('click',()=>addPart(Number(document.getElementById('circuitValue').value)||220,Number(document.getElementById('circuitTolerance').value)||5));
+document.getElementById('confirmCircuit').addEventListener('click',()=>{if(document.getElementById('circuitValue').value===''){document.getElementById('circuitValue').focus();return}addPart(Number(document.getElementById('circuitValue').value),Number(document.getElementById('circuitTolerance').value)||5)});
+document.getElementById('rotateSelected').addEventListener('click',rotateSelected);
+function rotateSelected(){const p=parts.find(p=>p.id===selectedId);if(p){p.rotated=!p.rotated;renderParts();selectPart(p.id)}}
+document.getElementById('deleteSelected').addEventListener('click',()=>{if(selectedId===null)return;parts=parts.filter(p=>p.id!==selectedId);connections=connections.filter(c=>c.a.id!==selectedId&&c.b.id!==selectedId);selectedId=null;renderParts()});
+document.getElementById('clearCircuit').addEventListener('click',()=>{parts=[];connections=[];selectedId=null;terminalStart=null;renderParts()});
+document.getElementById('calcMode').addEventListener('change',updateCalculation);
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))rotateSelected()});
+window.addEventListener('resize',drawWires);
+function buildCommercialTable(){
+ const t=document.getElementById('commercialTable');
+ const headers=['×1','×10','×100','×1.000 (K)','×10.000 (10K)','×100.000 (100K)','×1.000.000 (M)'];
+ const bases=[1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.1,5.6,6.8,8.2,10];
+ const fmtBase=(n,unit)=>String(n).replace('.',unit);
+ const values=(base,col)=>{
+   if(col===0)return String(base).replace('.',',')+' Ω';
+   if(col===1)return String(base*10).replace('.',',')+' Ω';
+   if(col===2)return String(base*100).replace('.',',')+' Ω';
+   if(col===3)return fmtBase(base,'K')+' Ω';
+   if(col===4)return (base*10)+'K Ω';
+   if(col===5)return (base*100)+'K Ω';
+   return fmtBase(base,'M')+' Ω';
+ };
+ let html='<thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+ bases.forEach((base,r)=>{
+   html+='<tr>';
+   for(let c=0;c<7;c++){
+     const value=values(base,c);
+     html+=`<td><input type="text" aria-label="Fila ${r+1}, columna ${c+1}" value="${value.replace(/"/g,'&quot;')}"></td>`;
+   }
+   html+='</tr>';
+ });
+ t.innerHTML=html+'</tbody>';
+}
+function nearestCommercialValues(value){
+ value=Number(value);
+ if(!Number.isFinite(value)||value<=0)return [220,470,1000];
+ const e12=[10,12,15,18,22,27,33,39,47,56,68,82];
+ const candidates=[];
+ for(let exp=-2;exp<=9;exp++){const scale=Math.pow(10,exp);e12.forEach(n=>candidates.push(n*scale))}
+ candidates.push(0);
+ candidates.sort((a,b)=>Math.abs(a-value)-Math.abs(b-value));
+ const unique=[];
+ for(const v of candidates){if(!unique.some(x=>Math.abs(x-v)<Math.max(1e-9,Math.abs(v)*1e-9))){unique.push(v);if(unique.length===3)break}}
+ return unique.sort((a,b)=>a-b);
+}
+function updateNearestCommercial(){
+ const value=Number(mainR.value);
+ if(mainR.value===''||!Number.isFinite(value)||value<=0){mainR.focus();return}
+ const tol=mainT.value===''?5:Number(mainT.value);
+ const values=nearestCommercialValues(value);
+ const cards=[...document.querySelectorAll('.resistor-card')];
+ cards.forEach((card,i)=>{
+   const v=values[i]??values[values.length-1];
+   card.querySelector('.commercial-value').value=v;
+   card.querySelector('.commercial-tol').value=String([1,2,5,10,.5,.25,.1].includes(tol)?tol:5);
+   card.querySelector('.commercial-value').dispatchEvent(new Event('input',{bubbles:true}));
+   card.querySelector('.commercial-tol').dispatchEvent(new Event('change',{bubbles:true}));
+ });
+}
+document.getElementById('confirmMain').addEventListener('click',()=>{updateMain();updateNearestCommercial()});
+populateColors();renderCommercialResistors();buildCommercialTable();updateMain();renderParts();
+</script>
+</body>
+</html>
